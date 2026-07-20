@@ -1,5 +1,6 @@
 const express = require("express");
 const axios = require("axios");
+const cron = require("node-cron");
 const { MongoClient } = require("mongodb"); 
 const path = require("path");
 
@@ -21,6 +22,7 @@ const STATUS_EMOJI = process.env.STATUS_EMOJI || "❤️"; // An Emoji at the st
 
 let db, booksCollection;
 let lastSentStatus = ""; // Cache to prevent sending identical status updates to Discord
+let syncTimeout = null; // Timer for the 1-minute debounce
 
 async function connectDB() {
     const client = new MongoClient(MONGO_URI);
@@ -33,16 +35,20 @@ async function connectDB() {
 async function updateStatuses(book) {
     if (!book || !DISCORD_TOKEN) return;
 
-    const diffMs = Date.now() - book.lastSync;
+    // Fetch the freshest data from the DB to ensure we have the absolute latest sync
+    const freshBook = await booksCollection.findOne({ docId: book.docId });
+    if (!freshBook) return;
+
+    const diffMs = Date.now() - freshBook.lastSync;
     const totalMinutes = Math.floor(diffMs / (1000 * 60));
     
-    // Because this now only runs on active syncs, this will almost always be "Just now"
-    let timeText = totalMinutes < 1 ? "Just now" : 
-                   `${Math.floor(totalMinutes / 60)}:${(totalMinutes % 60).toString().padStart(2, '0')} hours ago`;
+    // Hourly calculation to keep cron job API calls low
+    const hours = Math.floor(totalMinutes / 60);
+    let timeText = hours < 1 ? "Just now" : `${hours} hour${hours > 1 ? 's' : ''} ago`;
     
     const statusText = STATUS_TEMPLATE
-        .replace("{title}", book.title)
-        .replace("{percentage}", book.percentage)
+        .replace("{title}", freshBook.title)
+        .replace("{percentage}", freshBook.percentage)
         .replace("{timeText}", timeText);
 
     // RATE LIMIT PROTECTION: If the status string hasn't changed at all, skip the API call.
@@ -116,8 +122,18 @@ app.use("/api/koreader", async (req, res) => {
             );
 
             const updatedBook = result.value || result; 
-            // 100% Organic Trigger: This only fires when you are actively reading and syncing.
-            if (updatedBook) updateStatuses(updatedBook);
+            
+            if (updatedBook) {
+                // Clear the previous 1-minute timer if it exists
+                if (syncTimeout) {
+                    clearTimeout(syncTimeout);
+                }
+                
+                // Start a fresh 1-minute timer
+                syncTimeout = setTimeout(() => {
+                    updateStatuses(updatedBook);
+                }, 60 * 1000); // 60,000 milliseconds = 1 minute
+            }
         } catch (err) {
             console.error("[DB ERROR]:", err);
         }
@@ -157,6 +173,17 @@ app.post("/delete-book", async (req, res) => {
     } catch (err) {
         console.error("Delete error:", err);
         res.status(500).send("Error deleting book");
+    }
+});
+
+// Runs once exactly at the top of every hour (e.g., 1:00, 2:00, 3:00)
+cron.schedule('0 * * * *', async () => {
+    if (!booksCollection) return;
+    try {
+        const activeBook = await booksCollection.findOne({}, { sort: { lastSync: -1 } });
+        if (activeBook) updateStatuses(activeBook);
+    } catch (err) {
+        console.error("Cron job error:", err);
     }
 });
 
