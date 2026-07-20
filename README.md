@@ -2,7 +2,7 @@
 
 A lightweight, node.js proxy bridge and dashboard that interfaces with the official KOReader synchronization API (`sync.koreader.rocks`) OR ANY KOREADER SYNCING SERVER! Personally I use xteinks official one. It intercepts progress syncs to change your discord status, making you able to get an automatically updating status that says something similar to "Reading XX (37%) • Last read: 0:18 hours ago". The Last Read section is in Hour : Minute format. You need to use binary / file format syncing for this to work.
 
-## WARNING: This includes something called "Self-botting" since we´re automatic something outside the discord api, I´ve made it as safe as possible, and as long as you don´t spam the sync button every 5 seconds or so you should be fine.
+## WARNING: This includes something called "Self-botting" since we´re automatic something outside the discord api, I´ve made it as safe as possible, and as long as you don´t spam the sync button every 5 seconds or so you should be fine. Otherwise you may face punishment from discord.
 
 ---
 
