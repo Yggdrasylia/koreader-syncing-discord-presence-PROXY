@@ -1,5 +1,7 @@
 # Koreader sync Bridge & Dashboard (ONLY TESTED ON XTEINK X3 CROSSINK)
 
+<img width="287" height="160" alt="image" src="https://github.com/user-attachments/assets/83505f06-be40-45e5-90d1-c5b315428b41" />
+
 A lightweight, node.js proxy bridge and dashboard that interfaces with the official KOReader synchronization API (`sync.koreader.rocks`) OR ANY KOREADER SYNCING SERVER! Personally I use xteinks official one. It intercepts progress syncs to change your discord status, making you able to get an automatically updating status that says something similar to "Reading Outer God Needs Warmth (37%) • Last read: 0:18 hours ago". The Last Read section is in Hour : Minute format. You need to use binary / file format syncing for this to work.
 
 ---
