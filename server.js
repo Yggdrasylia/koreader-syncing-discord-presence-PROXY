@@ -160,7 +160,7 @@ app.post("/delete-book", async (req, res) => {
     }
 });
 
-cron.schedule('*/5 * * * *', async () => { 
+cron.schedule('*/15 * * * *', async () => {
     if (!booksCollection) return;
     try {
         const activeBook = await booksCollection.findOne({}, { sort: { lastSync: -1 } });
