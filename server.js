@@ -1,6 +1,5 @@
 const express = require("express");
 const axios = require("axios");
-const cron = require("node-cron");
 const { MongoClient } = require("mongodb"); 
 const path = require("path");
 
@@ -12,14 +11,13 @@ const KOREADER_API = process.env.KOREADER_API
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN; 
 const MONGO_URI = process.env.MONGODB_URI; 
 
-// Don´t change anything unless you know what you´re doing above this line! ----------------------------------------------------------------------------------------------------------------------------------------------
+// Don't change anything unless you know what you're doing above this line! ----------------------------------------------------------------------------------------------------------------------------------------------
 
-// CHANGE YOU STATUS TEXT HERE:D
+// CHANGE YOU STATUS TEXT HERE :D
 const STATUS_TEMPLATE = process.env.STATUS_TEMPLATE || "Reading {title} ({percentage}%) • Last read: {timeText}";
-const STATUS_EMOJI = process.env.STATUS_EMOJI || "❤️"; // An Emoji at the start of the text, leave empty if you don´t want a emoji.
+const STATUS_EMOJI = process.env.STATUS_EMOJI || "❤️"; // An Emoji at the start of the text, leave empty if you don't want an emoji.
 
-
-// Don´t change anything unless you know what you´re doing beneath this line! ----------------------------------------------------------------------------------------------------------------------------------------------
+// Don't change anything unless you know what you're doing beneath this line! ----------------------------------------------------------------------------------------------------------------------------------------------
 
 let db, booksCollection;
 let lastSentStatus = ""; // Cache to prevent sending identical status updates to Discord
@@ -38,6 +36,7 @@ async function updateStatuses(book) {
     const diffMs = Date.now() - book.lastSync;
     const totalMinutes = Math.floor(diffMs / (1000 * 60));
     
+    // Because this now only runs on active syncs, this will almost always be "Just now"
     let timeText = totalMinutes < 1 ? "Just now" : 
                    `${Math.floor(totalMinutes / 60)}:${(totalMinutes % 60).toString().padStart(2, '0')} hours ago`;
     
@@ -117,6 +116,7 @@ app.use("/api/koreader", async (req, res) => {
             );
 
             const updatedBook = result.value || result; 
+            // 100% Organic Trigger: This only fires when you are actively reading and syncing.
             if (updatedBook) updateStatuses(updatedBook);
         } catch (err) {
             console.error("[DB ERROR]:", err);
@@ -157,16 +157,6 @@ app.post("/delete-book", async (req, res) => {
     } catch (err) {
         console.error("Delete error:", err);
         res.status(500).send("Error deleting book");
-    }
-});
-
-cron.schedule('*/15 * * * *', async () => {
-    if (!booksCollection) return;
-    try {
-        const activeBook = await booksCollection.findOne({}, { sort: { lastSync: -1 } });
-        if (activeBook) updateStatuses(activeBook);
-    } catch (err) {
-        console.error("Cron job error:", err);
     }
 });
 
