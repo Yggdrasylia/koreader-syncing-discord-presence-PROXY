@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Book Dashboard</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { padding: 10px; text-align: left; }
+        form { margin-bottom: 20px; }
+        .inline-form { margin-bottom: 0; display: flex; gap: 5px; }
+        .rename-input { width: 200px; padding: 4px; }
+    </style>
+</head>
+<body>
+    <h1>Book Dashboard</h1>
+    
+    <form action="/add-book" method="POST">
+        <input name="title" placeholder="Book Title" required>
+        <input name="docId" placeholder="Document ID (Binary Hash)" required>
+        <button type="submit">Add Book</button>
+    </form>
+
+    <table border="1" id="bookTable">
+        <tr>
+            <th>Title</th>
+            <th>Progress</th>
+            <th>Last Sync</th>
+            <th>Action</th>
+        </tr>
+    </table>
+
+    <script>
+        fetch('/books')
+            .then(r => r.json())
+            .then(data => {
+                const table = document.getElementById('bookTable');
+                
+                data.forEach(book => {
+                    const isUnknown = book.title === "Unknown Novel";
+                    const inputStyle = isUnknown ? 'border-color: red;' : '';
+
+                    table.innerHTML += `
+                        <tr>
+                            <td>
+                                <form action="/rename-book" method="POST" class="inline-form">
+                                    <input type="hidden" name="docId" value="${book.docId}">
+                                    <input type="text" name="title" value="${book.title}" class="rename-input" style="${inputStyle}" required>
+                                    <button type="submit">Save</button>
+                                </form>
+                            </td>
+                            <td>${book.percentage}%</td>
+                            <td>${new Date(book.lastSync).toLocaleTimeString()}</td>
+                            <td>
+                                <form action="/delete-book" method="POST" style="margin: 0;">
+                                    <input type="hidden" name="docId" value="${book.docId}">
+                                    <button type="submit" style="color: red;">Delete</button>
+                                </form>
+                            </td>
+                        </tr>`;
+                });
+            });
+    </script>
+</body>
+</html>
