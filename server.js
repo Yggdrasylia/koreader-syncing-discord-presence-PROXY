@@ -103,7 +103,7 @@ app.get("/books", async (req, res) => {
 app.use("/api/koreader", async (req, res) => {
     let targetPath = req.originalUrl.replace("/api/koreader", "");
     if (!targetPath.startsWith('/')) targetPath = '/' + targetPath;
-    const targetUrl = new URL(targetPath, KOREADER_API).href;
+    const targetUrl = KOREADER_API + targetPath;
 
     console.log(`\n[PROXY] Incoming ${req.method} request from device`);
     
